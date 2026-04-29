@@ -2,7 +2,7 @@ package com.fx.csvtest.assertion;
 
 import com.fx.csvtest.model.TestCase;
 import com.fx.csvtest.model.TestResult;
-import com.fx.payment.model.domain.DomainPayment;
+import com.fx.csvtest.model.DomainPayment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

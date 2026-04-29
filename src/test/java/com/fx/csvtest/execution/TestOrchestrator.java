@@ -1,19 +1,16 @@
 package com.fx.csvtest.execution;
 
 import com.fx.csvtest.assertion.DomainPaymentAsserter;
+import com.fx.csvtest.db.AutPaymentJdbcClient;
+import com.fx.csvtest.db.AutPaymentRecord;
 import com.fx.csvtest.db.TestExecutionRecord;
 import com.fx.csvtest.db.TestExecutionRepository;
+import com.fx.csvtest.model.DomainPayment;
 import com.fx.csvtest.model.TestCase;
 import com.fx.csvtest.model.TestResult;
-import com.fx.payment.config.JmsConfig;
-import com.fx.payment.entity.PaymentMessage;
-import com.fx.payment.entity.PaymentStatus;
-import com.fx.payment.model.domain.DomainPayment;
-import com.fx.payment.repository.PaymentMessageRepository;
+import com.fx.csvtest.xml.DomainPaymentXmlParser;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
@@ -22,13 +19,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
-import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,8 +32,8 @@ import java.util.concurrent.TimeUnit;
  *   <li>Record the test dispatch in the local DB.</li>
  *   <li>Send the pacs.009 XML to {@code fx.pacs009.inbound}.</li>
  *   <li>Wait (via Awaitility + AUT's exposed embedded H2 DB) for the AUT to process it.</li>
-   *   <li>For VALID tests: browse the domain payment from {@code fx.payment.valid}
-   *       and run assertion checks.</li>
+ *   <li>For VALID tests: browse the domain payment from {@code fx.payment.valid}
+ *       and run assertion checks.</li>
  *   <li>For INVALID tests: verify the DB record has INVALID status and the
  *       raw message appears on {@code fx.payment.invalid}.</li>
  *   <li>Update the correlation DB record with the outcome.</li>
@@ -52,21 +46,19 @@ import java.util.concurrent.TimeUnit;
 public class TestOrchestrator {
 
     private final JmsTemplate jmsTemplate;
-    private final PaymentMessageRepository autPaymentRepo;     // AUT's DB
+    private final AutPaymentJdbcClient autPayments;            // AUT's exposed DB
     private final TestExecutionRepository testExecRepo;         // test correlation table
     private final DomainPaymentAsserter asserter;
+    private final DomainPaymentXmlParser domainParser;
 
     @Value("${fx.component.test.message-timeout-seconds:15}")
     private int timeoutSeconds;
 
-    private static final JAXBContext DOMAIN_JAXB;
-    static {
-        try {
-            DOMAIN_JAXB = JAXBContext.newInstance(DomainPayment.class);
-        } catch (JAXBException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final String INBOUND_QUEUE = "fx.pacs009.inbound";
+    private static final String VALID_QUEUE = "fx.payment.valid";
+    private static final String INVALID_QUEUE = "fx.payment.invalid";
+    private static final String STATUS_PROCESSED = "PROCESSED";
+    private static final String STATUS_INVALID = "INVALID";
 
     /**
      * Executes a single test case and returns the result.
@@ -100,11 +92,11 @@ public class TestOrchestrator {
                 .build();
 
         try {
-            Set<UUID> existingPaymentIds = existingPaymentIdsForTxId(tc.getTxId());
+            Set<String> existingPaymentIds = autPayments.existingIdsForTransactionId(tc.getTxId());
 
             // ── 1. Send to inbound queue ──────────────────────────────────
-            jmsTemplate.convertAndSend(JmsConfig.INBOUND_QUEUE, sentXml);
-            log.debug("[{}] Sent to {}", tc.getTestId(), JmsConfig.INBOUND_QUEUE);
+            jmsTemplate.convertAndSend(INBOUND_QUEUE, sentXml);
+            log.debug("[{}] Sent to {}", tc.getTestId(), INBOUND_QUEUE);
 
             // ── 2. Route to VALID or INVALID assertion path ───────────────
             if (tc.isValid()) {
@@ -146,34 +138,34 @@ public class TestOrchestrator {
             TestCase tc,
             TestResult result,
             TestExecutionRecord exec,
-            Set<UUID> existingPaymentIds) {
+            Set<String> existingPaymentIds) {
         // Wait for AUT DB record to reach PROCESSED
         Awaitility.await("[" + tc.getTestId() + "] PROCESSED in AUT DB")
                 .atMost(timeoutSeconds, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .until(() -> {
-                    Optional<PaymentMessage> r = latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds);
-                    return r.isPresent() && r.get().getStatus() == PaymentStatus.PROCESSED;
+                    Optional<AutPaymentRecord> r = autPayments.latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds);
+                    return r.isPresent() && STATUS_PROCESSED.equals(r.get().status());
                 });
 
-        PaymentMessage autRecord = latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds).orElseThrow();
-        result.setPersistedPaymentId(autRecord.getId().toString());
-        result.setPersistedStatus(autRecord.getStatus().name());
-        exec.setAutPaymentId(autRecord.getId().toString());
-        exec.setAutDbStatus(autRecord.getStatus().name());
+        AutPaymentRecord autRecord = autPayments.latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds).orElseThrow();
+        result.setPersistedPaymentId(autRecord.id());
+        result.setPersistedStatus(autRecord.status());
+        exec.setAutPaymentId(autRecord.id());
+        exec.setAutDbStatus(autRecord.status());
 
         // Browse domain payment from valid queue - match by TransactionId without consuming it.
-        DomainPayment domain = browseForTxId(JmsConfig.VALID_QUEUE, tc.getTxId());
-        if (domain == null) {
+        String domainXml = browseDomainXmlForTxId(tc.getTxId());
+        if (domainXml == null) {
             result.setStatus(TestResult.Status.FAIL);
-            result.addFailure("No domain payment found on " + JmsConfig.VALID_QUEUE
+            result.addFailure("No domain payment found on " + VALID_QUEUE
                     + " with TransactionId=" + tc.getTxId());
             exec.setState(TestExecutionRecord.State.PROCESSED);
             exec.setResultStatus("FAIL");
             return;
         }
 
-        String domainXml = serializeDomain(domain);
+        DomainPayment domain = domainParser.parse(domainXml);
         result.setReceivedDomainXml(domainXml);
         exec.setReceivedDomainXml(domainXml);
         exec.setState(TestExecutionRecord.State.PROCESSED);
@@ -182,9 +174,9 @@ public class TestOrchestrator {
         asserter.assertAll(tc, domain, result);
 
         // Also assert UUID consistency: domain PaymentId must match AUT DB id
-        if (domain.getPaymentId() != null && !domain.getPaymentId().equals(autRecord.getId().toString())) {
+        if (domain.getPaymentId() != null && !domain.getPaymentId().equals(autRecord.id())) {
             result.addFailure("UUID mismatch: domain.PaymentId='" + domain.getPaymentId()
-                    + "' != AUT DB id='" + autRecord.getId() + "'");
+                    + "' != AUT DB id='" + autRecord.id() + "'");
         }
 
         finalizeResult(result, exec);
@@ -194,28 +186,25 @@ public class TestOrchestrator {
 
     private void handleInvalidCase(TestCase tc, TestResult result, TestExecutionRecord exec) {
         // Wait for a new INVALID record to appear in AUT DB
-        long invalidsBefore = autPaymentRepo.findByStatus(PaymentStatus.INVALID).size();
+        long invalidsBefore = autPayments.countByStatus(STATUS_INVALID);
 
         Awaitility.await("[" + tc.getTestId() + "] INVALID record in AUT DB")
                 .atMost(timeoutSeconds, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> autPaymentRepo.findByStatus(PaymentStatus.INVALID).size() > invalidsBefore);
+                .until(() -> autPayments.countByStatus(STATUS_INVALID) > invalidsBefore);
 
         // Get most recent INVALID record
-        List<PaymentMessage> invalids = autPaymentRepo.findByStatus(PaymentStatus.INVALID);
-        PaymentMessage autRecord = invalids.stream()
-                .max(java.util.Comparator.comparing(PaymentMessage::getCreatedAt))
-                .orElseThrow();
+        AutPaymentRecord autRecord = autPayments.latestByStatus(STATUS_INVALID).orElseThrow();
 
-        result.setPersistedStatus(autRecord.getStatus().name());
-        result.setPersistedValidationErrors(autRecord.getValidationErrors());
-        exec.setAutDbStatus(autRecord.getStatus().name());
-        exec.setAutValidationErrors(autRecord.getValidationErrors());
+        result.setPersistedStatus(autRecord.status());
+        result.setPersistedValidationErrors(autRecord.validationErrors());
+        exec.setAutDbStatus(autRecord.status());
+        exec.setAutValidationErrors(autRecord.validationErrors());
 
         // Verify the message also appeared on the invalid queue without consuming it.
-        String invalidXml = browseTextMessageContaining(JmsConfig.INVALID_QUEUE, tc.getTxId());
+        String invalidXml = browseTextMessageContaining(INVALID_QUEUE, tc.getTxId());
         if (invalidXml == null) {
-            result.addFailure("No message found on " + JmsConfig.INVALID_QUEUE
+            result.addFailure("No message found on " + INVALID_QUEUE
                     + " with TransactionId=" + tc.getTxId());
         } else {
             result.setReceivedInvalidXml(invalidXml);
@@ -224,7 +213,7 @@ public class TestOrchestrator {
 
         // Check expected error substring if specified in CSV
         if (!blank(tc.getExpectedErrorContains())) {
-            String errors = autRecord.getValidationErrors();
+            String errors = autRecord.validationErrors();
             if (errors == null || !errors.toLowerCase().contains(tc.getExpectedErrorContains().toLowerCase())) {
                 result.addFailure("ValidationErrors: expected to contain '"
                         + tc.getExpectedErrorContains() + "' but was: '"
@@ -238,24 +227,10 @@ public class TestOrchestrator {
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private Set<UUID> existingPaymentIdsForTxId(String txId) {
-        return autPaymentRepo.findAll().stream()
-                .filter(payment -> txId.equals(payment.getTransactionId()))
-                .map(PaymentMessage::getId)
-                .collect(java.util.stream.Collectors.toSet());
-    }
-
-    private Optional<PaymentMessage> latestNewPaymentForTxId(String txId, Set<UUID> existingPaymentIds) {
-        return autPaymentRepo.findAll().stream()
-                .filter(payment -> txId.equals(payment.getTransactionId()))
-                .filter(payment -> !existingPaymentIds.contains(payment.getId()))
-                .max(java.util.Comparator.comparing(PaymentMessage::getCreatedAt));
-    }
-
-    private DomainPayment browseForTxId(String queue, String txId) {
+    private String browseDomainXmlForTxId(String txId) {
         long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
         while (System.currentTimeMillis() < deadline) {
-            DomainPayment found = jmsTemplate.browse(queue, (session, browser) -> {
+            String found = jmsTemplate.browse(VALID_QUEUE, (session, browser) -> {
                 Enumeration<?> messages = browser.getEnumeration();
                 while (messages.hasMoreElements()) {
                     Message raw = (Message) messages.nextElement();
@@ -263,7 +238,7 @@ public class TestOrchestrator {
                         String xml = ((TextMessage) raw).getText();
                         DomainPayment dp = parseDomain(xml);
                         if (txId.equals(dp.getTransactionId())) {
-                            return dp;
+                            return xml;
                         }
                         log.debug("Skipped unrelated domain payment txId={} (looking for {})",
                                 dp.getTransactionId(), txId);
@@ -315,18 +290,8 @@ public class TestOrchestrator {
         }
     }
 
-    private DomainPayment parseDomain(String xml) throws JAXBException {
-        return (DomainPayment) DOMAIN_JAXB.createUnmarshaller().unmarshal(new StringReader(xml));
-    }
-
-    private String serializeDomain(DomainPayment domain) {
-        try {
-            java.io.StringWriter sw = new java.io.StringWriter();
-            DOMAIN_JAXB.createMarshaller().marshal(domain, sw);
-            return sw.toString();
-        } catch (JAXBException e) {
-            return "<serialization-error/>";
-        }
+    private DomainPayment parseDomain(String xml) {
+        return domainParser.parse(xml);
     }
 
     private void finalizeResult(TestResult result, TestExecutionRecord exec) {

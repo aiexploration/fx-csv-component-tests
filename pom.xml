@@ -31,18 +31,6 @@
 
     <dependencies>
 
-        <!-- ─── Application Under Test ─────────────────────────────────────
-             SwiftPay publishes this artifact as com.fx:fx-payment-processor.
-             Run: cd ../swiftpay && mvn install -DskipTests first, or use
-             ./run-tests.sh to do that automatically.
-        -->
-        <dependency>
-            <groupId>com.fx</groupId>
-            <artifactId>fx-payment-processor</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- ─── Spring Boot ─────────────────────────────────────────────── -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

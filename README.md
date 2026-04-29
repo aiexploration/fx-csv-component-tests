@@ -65,16 +65,18 @@ Or via Make:
 
 ```bash
 make start-component  # terminal 1: start SwiftPay
-make run              # terminal 2: install ../swiftpay + run tests
+make run              # terminal 2: run tests
 make run-open         # run + open report
-make test             # skip SwiftPay install (if already installed)
+make test             # run tests
 ```
 
 The tests no longer start SwiftPay inside JUnit. `start-component.sh` delegates
 to SwiftPay's `start.sh`, which runs SwiftPay with embedded H2 and embedded
 Artemis. SwiftPay exposes those embedded resources over local TCP ports only
 while that JVM is running.
-`run-tests.sh` starts only the CSV test-client Spring context and connects to:
+`run-tests.sh` starts only the CSV test-client Spring context. It does not
+install or depend on the SwiftPay Maven artifact; it treats SwiftPay as a
+black-box component and connects to:
 
 | Service | Connection |
 |---------|------------|
@@ -117,9 +119,7 @@ If SwiftPay is not at `../swiftpay`, pass an explicit path:
 
 ```bash
 ./start-component.sh --swiftpay-dir /path/to/swiftpay
-./run-tests.sh --swiftpay-dir /path/to/swiftpay
 SWIFTPAY_DIR=/path/to/swiftpay make start-component
-SWIFTPAY_DIR=/path/to/swiftpay make run
 ```
 
 ### Requirements

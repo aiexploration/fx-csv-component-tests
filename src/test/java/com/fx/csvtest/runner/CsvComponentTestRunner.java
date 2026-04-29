@@ -65,8 +65,8 @@ class CsvComponentTestRunner {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ComponentScan(basePackages = "com.fx.csvtest")
-    @EntityScan(basePackages = {"com.fx.payment.entity", "com.fx.csvtest.db"})
-    @EnableJpaRepositories(basePackages = {"com.fx.payment.repository", "com.fx.csvtest.db"})
+    @EntityScan(basePackages = "com.fx.csvtest.db")
+    @EnableJpaRepositories(basePackages = "com.fx.csvtest.db")
     static class ComponentTestConfig {
     }
 
