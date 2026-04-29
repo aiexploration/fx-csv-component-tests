@@ -1,6 +1,6 @@
 # FX CSV Component Test Suite
 
-A **CSV-driven component test framework** for the `fx-payment-processor` ISO 20022 pacs.009 engine. Each test case is a row in a CSV file — no Java code required to add new scenarios.
+A **CSV-driven component test framework** for the SwiftPay `fx-payment-processor` ISO 20022 pacs.009 engine. Each test case is a row in a CSV file — no Java code required to add new scenarios.
 
 ---
 
@@ -17,8 +17,8 @@ A **CSV-driven component test framework** for the `fx-payment-processor` ISO 200
 │                                               ┌──────────────────┐ │
 │                                               │  fx-payment-     │ │
 │                                               │  processor (AUT) │ │
-│                                               │  (embedded, same │ │
-│                                               │   Spring context)│ │
+│                                               │  separate JVM    │ │
+│                                               │  embedded mode   │ │
 │                                               └──────────────────┘ │
 │                                                    │         │      │
 │                                         VALID ◄────┘         └────► INVALID │
@@ -42,27 +42,84 @@ A **CSV-driven component test framework** for the `fx-payment-processor` ISO 200
 1. **Load** — All `*.csv` files in `src/test/resources/test-data/` are loaded alphabetically.
 2. **Build** — `Pacs009XmlFactory` converts each CSV row into a pacs.009.001.08 XML string. Omission flags and raw XML overrides allow injecting deliberately invalid content.
 3. **Send** — The XML is published to `fx.pacs009.inbound`.
-4. **Wait** — `TestOrchestrator` polls the AUT's H2 database (via JPA) until the record reaches `PROCESSED` or `INVALID` status (up to 15 seconds per test).
+4. **Wait** — `TestOrchestrator` polls the AUT's exposed embedded H2 database (via JPA) until the record reaches `PROCESSED` or `INVALID` status (up to 15 seconds per test).
 5. **Receive** — For VALID tests, the domain payment XML is drained from `fx.payment.valid`, correlating on `TransactionId`. For INVALID tests, the message is read from `fx.payment.invalid`.
 6. **Assert** — `DomainPaymentAsserter` compares every non-blank expected column from the CSV against the received domain payment. Timestamps are validated for ISO-8601 format and freshness (≤5 minutes old) rather than exact match.
-7. **Record** — Each test's state is persisted in the test framework's own H2 table (`test_execution`) for DB-level correlation and auditability.
+7. **Record** — Each test's state is persisted in the exposed embedded H2 database in the `test_execution` table for DB-level correlation and auditability.
 8. **Report** — HTML and CSV reports are written to `target/component-test-report/`.
 
 ---
 
-## One-Click Execution
+## Decoupled Execution
 
 ```bash
-./run-tests.sh            # install AUT + run all tests
-./run-tests.sh --open-report  # same + open HTML report in browser
+# Terminal 1: start SwiftPay and leave it running
+./start-component.sh
+
+# Terminal 2: run the CSV component tests against that process
+./run-tests.sh
+./run-tests.sh --open-report
 ```
 
 Or via Make:
 
 ```bash
-make run          # install AUT + run
-make run-open     # run + open report
-make test         # skip AUT install (if already installed)
+make start-component  # terminal 1: start SwiftPay
+make run              # terminal 2: install ../swiftpay + run tests
+make run-open         # run + open report
+make test             # skip SwiftPay install (if already installed)
+```
+
+The tests no longer start SwiftPay inside JUnit. `start-component.sh` delegates
+to SwiftPay's `start.sh`, which runs SwiftPay with embedded H2 and embedded
+Artemis. SwiftPay exposes those embedded resources over local TCP ports only
+while that JVM is running.
+`run-tests.sh` starts only the CSV test-client Spring context and connects to:
+
+| Service | Connection |
+|---------|------------|
+| Artemis | `tcp://localhost:61616` |
+| H2 TCP | `jdbc:h2:tcp://localhost:9092/mem:fxpayments` (`sa`, blank password) |
+| H2 browser console | <http://localhost:8082> |
+
+Because the DB and broker are still embedded, they disappear when SwiftPay
+stops. While SwiftPay is running, you can inspect `payment_message` and
+`test_execution` through the H2 console or any H2 JDBC client using the TCP URL
+above.
+
+### Inspect Artemis queues
+
+While `./start-component.sh` is running, open the read-only queue inspector in
+another terminal:
+
+```bash
+./inspect-queues.sh
+# or
+make inspect-queues
+```
+
+It connects to `tcp://localhost:61616` and can browse these queues without
+consuming messages:
+
+| Queue | Purpose |
+|-------|---------|
+| `fx.pacs009.inbound` | pacs.009 messages sent to SwiftPay |
+| `fx.payment.valid` | domain payment XML emitted for valid payments |
+| `fx.payment.invalid` | invalid raw XML routed by SwiftPay |
+
+For Docker/standalone Artemis with credentials:
+
+```bash
+./inspect-queues.sh --user artemis --password artemis
+```
+
+If SwiftPay is not at `../swiftpay`, pass an explicit path:
+
+```bash
+./start-component.sh --swiftpay-dir /path/to/swiftpay
+./run-tests.sh --swiftpay-dir /path/to/swiftpay
+SWIFTPAY_DIR=/path/to/swiftpay make start-component
+SWIFTPAY_DIR=/path/to/swiftpay make run
 ```
 
 ### Requirements
@@ -71,8 +128,6 @@ make test         # skip AUT install (if already installed)
 |-------|---------|
 | Java  | 21      |
 | Maven | 3.9     |
-
-No Docker, no external broker, no external database required.
 
 ---
 
@@ -194,16 +249,9 @@ INV-002,InvalidTests,Bad currency USDX,INVALID,,INV-TXN-002,INV-E2E-002,,,GROS,1
 
 | File | Category | # Tests | Coverage |
 |------|----------|---------|----------|
-| `01-happy-path-tests.csv` | HappyPath | 8 | Valid FX settlements across major currency pairs, all settlement methods |
-| `02-boundary-amount-tests.csv` | BoundaryAmount | 12 | `minInclusive=0`, `fractionDigits=5`, negative, non-numeric |
-| `03-boundary-currency-tests.csv` | BoundaryCurrency | 15 | `[A-Z]{3}` pattern, case, length |
-| `04-boundary-bic-tests.csv` | BoundaryBIC | 14 | 8-char, 11-char, case, length, country code position |
-| `05-boundary-identification-tests.csv` | BoundaryID | 17 | `Max35Text` min/max, UETR UUID v4 pattern |
-| `06-boundary-settlement-enums-tests.csv` | BoundarySettlementMethod/ChargeBearer/Date | 24 | All enum values, invalid variants, xs:date format |
-| `07-boundary-iban-exchangerate-tests.csv` | BoundaryIBAN/ExchangeRate | 13 | IBAN pattern, exchange rate precision |
-| `08-domain-field-mapping-tests.csv` | DomainMapping | 8 | End-to-end field mapping verification |
+| `01-happy-path-tests.csv` | HappyPath | 1 | Single valid USD/GBP pacs.009 happy-path settlement |
 
-**Total: ~111 test cases**
+**Total: 1 test case**
 
 ---
 
@@ -212,7 +260,9 @@ INV-002,InvalidTests,Bad currency USDX,INVALID,,INV-TXN-002,INV-E2E-002,,,GROS,1
 ```
 fx-csv-component-tests/
 ├── pom.xml
-├── run-tests.sh                              ← one-click runner
+├── start-component.sh                        ← starts SwiftPay separately
+├── run-tests.sh                              ← runs only the CSV test client
+├── inspect-queues.sh                         ← interactive Artemis queue browser
 ├── Makefile
 ├── README.md
 └── src/test/
@@ -235,20 +285,15 @@ fx-csv-component-tests/
     │   ├── db/
     │   │   ├── TestExecutionRecord.java      ← JPA entity for correlation
     │   │   └── TestExecutionRepository.java
-    │   └── report/
-    │       ├── HtmlReportGenerator.java      ← styled self-contained HTML report
-    │       └── CsvReportGenerator.java       ← machine-readable CSV report
+    │   ├── report/
+    │   │   ├── HtmlReportGenerator.java      ← styled self-contained HTML report
+    │   │   └── CsvReportGenerator.java       ← machine-readable CSV report
+    │   └── tools/
+    │       └── ArtemisQueueInspector.java    ← read-only command-line JMS browser
     └── resources/
         ├── application.yml
         └── test-data/
-            ├── 01-happy-path-tests.csv
-            ├── 02-boundary-amount-tests.csv
-            ├── 03-boundary-currency-tests.csv
-            ├── 04-boundary-bic-tests.csv
-            ├── 05-boundary-identification-tests.csv
-            ├── 06-boundary-settlement-enums-tests.csv
-            ├── 07-boundary-iban-exchangerate-tests.csv
-            └── 08-domain-field-mapping-tests.csv
+            └── 01-happy-path-tests.csv
 ```
 
 ---
@@ -296,13 +341,22 @@ mvn test -Dtest.data.dir=/path/to/my/csvs
 
 ## Database Correlation
 
-Every dispatched message is recorded in a `test_execution` table (in the test framework's own H2 instance, separate from the AUT's DB):
+Every dispatched message is recorded in a `test_execution` table in the same exposed embedded H2 database used by SwiftPay:
 
 ```sql
 SELECT test_id, tx_id, expected_outcome, state, aut_payment_id,
        result_status, failure_details, duration_ms
 FROM test_execution
 ORDER BY created_at;
+```
+
+The SwiftPay payment records are in `payment_message`:
+
+```sql
+SELECT id, message_id, transaction_id, status, settlement_amount,
+       settlement_currency, debtor_bic, creditor_bic, created_at
+FROM payment_message
+ORDER BY created_at DESC;
 ```
 
 This enables:

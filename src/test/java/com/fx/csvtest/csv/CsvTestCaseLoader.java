@@ -6,6 +6,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.RFC4180Parser;
 import com.opencsv.RFC4180ParserBuilder;
+import com.opencsv.exceptions.CsvValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -92,6 +93,8 @@ public class CsvTestCaseLoader {
                     log.warn("Skipping malformed row {} in {}: {}", rowNum, file.getFileName(), e.getMessage());
                 }
             }
+        } catch (CsvValidationException e) {
+            throw new IOException("Invalid CSV in " + file.getFileName() + ": " + e.getMessage(), e);
         }
         return cases;
     }

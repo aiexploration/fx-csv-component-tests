@@ -1,0 +1,2 @@
+testId,category,description,expectedOutcome,status,persistedStatus,persistedPaymentId,durationMs,executedAt,assertionFailures,errorMessage
+"HP-001","HappyPath","USD/GBP FX settlement - GROS method","VALID","PASS","PROCESSED","d9677b8a-012a-48e4-9abf-68c89b688e7a",1913,"2026-04-29 20:39:31","",""

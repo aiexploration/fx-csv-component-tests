@@ -32,8 +32,9 @@
     <dependencies>
 
         <!-- ─── Application Under Test ─────────────────────────────────────
-             Depends on the thin jar (classifier=exec in fx-payment-processor).
-             Run: cd ../fx-payment-processor && mvn install -DskipTests first.
+             SwiftPay publishes this artifact as com.fx:fx-payment-processor.
+             Run: cd ../swiftpay && mvn install -DskipTests first, or use
+             ./run-tests.sh to do that automatically.
         -->
         <dependency>
             <groupId>com.fx</groupId>

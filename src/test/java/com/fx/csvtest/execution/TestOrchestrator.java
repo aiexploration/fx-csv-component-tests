@@ -10,6 +10,7 @@ import com.fx.payment.entity.PaymentMessage;
 import com.fx.payment.entity.PaymentStatus;
 import com.fx.payment.model.domain.DomainPayment;
 import com.fx.payment.repository.PaymentMessageRepository;
+import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -23,8 +24,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.StringReader;
 import java.time.LocalDateTime;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,9 +37,9 @@ import java.util.concurrent.TimeUnit;
  * <ol>
  *   <li>Record the test dispatch in the local DB.</li>
  *   <li>Send the pacs.009 XML to {@code fx.pacs009.inbound}.</li>
- *   <li>Wait (via Awaitility + AUT's H2 DB) for the AUT to process it.</li>
- *   <li>For VALID tests: read the domain payment from {@code fx.payment.valid}
- *       and run assertion checks.</li>
+ *   <li>Wait (via Awaitility + AUT's exposed embedded H2 DB) for the AUT to process it.</li>
+   *   <li>For VALID tests: browse the domain payment from {@code fx.payment.valid}
+   *       and run assertion checks.</li>
  *   <li>For INVALID tests: verify the DB record has INVALID status and the
  *       raw message appears on {@code fx.payment.invalid}.</li>
  *   <li>Update the correlation DB record with the outcome.</li>
@@ -49,7 +53,7 @@ public class TestOrchestrator {
 
     private final JmsTemplate jmsTemplate;
     private final PaymentMessageRepository autPaymentRepo;     // AUT's DB
-    private final TestExecutionRepository testExecRepo;         // test framework's DB
+    private final TestExecutionRepository testExecRepo;         // test correlation table
     private final DomainPaymentAsserter asserter;
 
     @Value("${fx.component.test.message-timeout-seconds:15}")
@@ -96,13 +100,15 @@ public class TestOrchestrator {
                 .build();
 
         try {
+            Set<UUID> existingPaymentIds = existingPaymentIdsForTxId(tc.getTxId());
+
             // ── 1. Send to inbound queue ──────────────────────────────────
             jmsTemplate.convertAndSend(JmsConfig.INBOUND_QUEUE, sentXml);
             log.debug("[{}] Sent to {}", tc.getTestId(), JmsConfig.INBOUND_QUEUE);
 
             // ── 2. Route to VALID or INVALID assertion path ───────────────
             if (tc.isValid()) {
-                handleValidCase(tc, result, execRecord);
+                handleValidCase(tc, result, execRecord, existingPaymentIds);
             } else {
                 handleInvalidCase(tc, result, execRecord);
             }
@@ -136,24 +142,28 @@ public class TestOrchestrator {
 
     // ── Valid path ─────────────────────────────────────────────────────────
 
-    private void handleValidCase(TestCase tc, TestResult result, TestExecutionRecord exec) {
+    private void handleValidCase(
+            TestCase tc,
+            TestResult result,
+            TestExecutionRecord exec,
+            Set<UUID> existingPaymentIds) {
         // Wait for AUT DB record to reach PROCESSED
         Awaitility.await("[" + tc.getTestId() + "] PROCESSED in AUT DB")
                 .atMost(timeoutSeconds, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .until(() -> {
-                    Optional<PaymentMessage> r = autPaymentRepo.findByTransactionId(tc.getTxId());
+                    Optional<PaymentMessage> r = latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds);
                     return r.isPresent() && r.get().getStatus() == PaymentStatus.PROCESSED;
                 });
 
-        PaymentMessage autRecord = autPaymentRepo.findByTransactionId(tc.getTxId()).orElseThrow();
+        PaymentMessage autRecord = latestNewPaymentForTxId(tc.getTxId(), existingPaymentIds).orElseThrow();
         result.setPersistedPaymentId(autRecord.getId().toString());
         result.setPersistedStatus(autRecord.getStatus().name());
         exec.setAutPaymentId(autRecord.getId().toString());
         exec.setAutDbStatus(autRecord.getStatus().name());
 
-        // Read domain payment from valid queue – match by TransactionId
-        DomainPayment domain = drainForTxId(JmsConfig.VALID_QUEUE, tc.getTxId());
+        // Browse domain payment from valid queue - match by TransactionId without consuming it.
+        DomainPayment domain = browseForTxId(JmsConfig.VALID_QUEUE, tc.getTxId());
         if (domain == null) {
             result.setStatus(TestResult.Status.FAIL);
             result.addFailure("No domain payment found on " + JmsConfig.VALID_QUEUE
@@ -202,17 +212,14 @@ public class TestOrchestrator {
         exec.setAutDbStatus(autRecord.getStatus().name());
         exec.setAutValidationErrors(autRecord.getValidationErrors());
 
-        // Verify the message also appeared on the invalid queue
-        jakarta.jms.Message invalidMsg = jmsTemplate.receive(JmsConfig.INVALID_QUEUE);
-        if (invalidMsg == null) {
-            result.addFailure("No message received on " + JmsConfig.INVALID_QUEUE
-                    + " within receive-timeout");
+        // Verify the message also appeared on the invalid queue without consuming it.
+        String invalidXml = browseTextMessageContaining(JmsConfig.INVALID_QUEUE, tc.getTxId());
+        if (invalidXml == null) {
+            result.addFailure("No message found on " + JmsConfig.INVALID_QUEUE
+                    + " with TransactionId=" + tc.getTxId());
         } else {
-            try {
-                String txt = ((TextMessage) invalidMsg).getText();
-                result.setReceivedInvalidXml(txt);
-                exec.setReceivedInvalidXml(txt.length() > 2000 ? txt.substring(0, 2000) + "…" : txt);
-            } catch (Exception ignored) {}
+            result.setReceivedInvalidXml(invalidXml);
+            exec.setReceivedInvalidXml(invalidXml.length() > 2000 ? invalidXml.substring(0, 2000) + "..." : invalidXml);
         }
 
         // Check expected error substring if specified in CSV
@@ -231,26 +238,81 @@ public class TestOrchestrator {
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    /**
-     * Drains {@code fx.payment.valid} until a message matching the given txId
-     * is found (up to {@code timeoutSeconds}).  Returns {@code null} if not found.
-     */
-    private DomainPayment drainForTxId(String queue, String txId) {
+    private Set<UUID> existingPaymentIdsForTxId(String txId) {
+        return autPaymentRepo.findAll().stream()
+                .filter(payment -> txId.equals(payment.getTransactionId()))
+                .map(PaymentMessage::getId)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    private Optional<PaymentMessage> latestNewPaymentForTxId(String txId, Set<UUID> existingPaymentIds) {
+        return autPaymentRepo.findAll().stream()
+                .filter(payment -> txId.equals(payment.getTransactionId()))
+                .filter(payment -> !existingPaymentIds.contains(payment.getId()))
+                .max(java.util.Comparator.comparing(PaymentMessage::getCreatedAt));
+    }
+
+    private DomainPayment browseForTxId(String queue, String txId) {
         long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
         while (System.currentTimeMillis() < deadline) {
-            jakarta.jms.Message raw = jmsTemplate.receive(queue);
-            if (raw == null) break;
-            try {
-                String xml = ((TextMessage) raw).getText();
-                DomainPayment dp = parseDomain(xml);
-                if (txId.equals(dp.getTransactionId())) return dp;
-                log.debug("Discarded unrelated domain payment txId={} (looking for {})",
-                        dp.getTransactionId(), txId);
-            } catch (Exception e) {
-                log.warn("Failed to parse domain payment message: {}", e.getMessage());
+            DomainPayment found = jmsTemplate.browse(queue, (session, browser) -> {
+                Enumeration<?> messages = browser.getEnumeration();
+                while (messages.hasMoreElements()) {
+                    Message raw = (Message) messages.nextElement();
+                    try {
+                        String xml = ((TextMessage) raw).getText();
+                        DomainPayment dp = parseDomain(xml);
+                        if (txId.equals(dp.getTransactionId())) {
+                            return dp;
+                        }
+                        log.debug("Skipped unrelated domain payment txId={} (looking for {})",
+                                dp.getTransactionId(), txId);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse domain payment message: {}", e.getMessage());
+                    }
+                }
+                return null;
+            });
+            if (found != null) {
+                return found;
             }
+            sleepBeforeNextBrowse();
         }
         return null;
+    }
+
+    private String browseTextMessageContaining(String queue, String expectedText) {
+        long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+        while (System.currentTimeMillis() < deadline) {
+            String found = jmsTemplate.browse(queue, (session, browser) -> {
+                Enumeration<?> messages = browser.getEnumeration();
+                while (messages.hasMoreElements()) {
+                    Message raw = (Message) messages.nextElement();
+                    try {
+                        String text = ((TextMessage) raw).getText();
+                        if (text.contains(expectedText)) {
+                            return text;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to read invalid queue message: {}", e.getMessage());
+                    }
+                }
+                return null;
+            });
+            if (found != null) {
+                return found;
+            }
+            sleepBeforeNextBrowse();
+        }
+        return null;
+    }
+
+    private void sleepBeforeNextBrowse() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private DomainPayment parseDomain(String xml) throws JAXBException {

@@ -7,12 +7,16 @@ import com.fx.csvtest.model.TestResult;
 import com.fx.csvtest.report.CsvReportGenerator;
 import com.fx.csvtest.report.HtmlReportGenerator;
 import com.fx.csvtest.xml.Pacs009XmlFactory;
-import com.fx.payment.FxPaymentProcessorApplication;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.nio.file.Path;
@@ -27,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <h3>What it does</h3>
  * <ol>
- *   <li>Starts the full {@link FxPaymentProcessorApplication} Spring context
- *       (embedded Artemis + H2).</li>
+ *   <li>Starts a lightweight test-client Spring context that connects to the
+ *       already-running SwiftPay DB and broker.</li>
  *   <li>Loads all {@code *.csv} files from the configured
  *       {@code fx.component.test.test-data-dir}.</li>
  *   <li>For each test case: builds the pacs.009 XML → sends it → waits →
@@ -38,9 +42,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       notified correctly.</li>
  * </ol>
  *
- * <h3>One-click execution</h3>
+ * <h3>Decoupled execution</h3>
  * <pre>
- *   ./run-tests.sh          # installs AUT, runs suite, opens report
+ *   ./start-component.sh    # terminal 1: starts SwiftPay
+ *   ./run-tests.sh          # terminal 2: runs the CSV test client
  * </pre>
  *
  * Or directly:
@@ -48,12 +53,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   mvn test
  * </pre>
  */
-@SpringBootTest(classes = FxPaymentProcessorApplication.class)
+@SpringBootTest(classes = {
+        CsvComponentTestRunner.ComponentTestConfig.class
+})
 @ActiveProfiles("default")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("FX Payment Processor – CSV Component Test Suite")
 @Slf4j
 class CsvComponentTestRunner {
+
+    @SpringBootConfiguration
+    @EnableAutoConfiguration
+    @ComponentScan(basePackages = "com.fx.csvtest")
+    @EntityScan(basePackages = {"com.fx.payment.entity", "com.fx.csvtest.db"})
+    @EnableJpaRepositories(basePackages = {"com.fx.payment.repository", "com.fx.csvtest.db"})
+    static class ComponentTestConfig {
+    }
 
     @Autowired private CsvTestCaseLoader loader;
     @Autowired private Pacs009XmlFactory xmlFactory;

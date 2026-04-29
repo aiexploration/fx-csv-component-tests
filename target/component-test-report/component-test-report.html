@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FX CSV Component Test Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f4f8;color:#1a202c;padding:1.5rem}
+h1{font-size:1.7rem;font-weight:700;color:#2d3748}
+.subtitle{color:#718096;font-size:.85rem;margin:.3rem 0 1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem}
+.card{background:#fff;border-radius:10px;padding:1.1rem;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.num{font-size:2rem;font-weight:700}.label{font-size:.72rem;color:#718096;text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+.pass{color:#38a169}.fail{color:#e53e3e}.error{color:#dd6b20}.skip{color:#d69e2e}.info{color:#3182ce}
+.progress{height:10px;background:#e2e8f0;border-radius:5px;margin-bottom:2rem;overflow:hidden}
+.fill{height:100%;border-radius:5px}.fill-pass{background:#38a169}.fill-fail{background:#e53e3e}
+section{margin-bottom:1.5rem}
+.sec-head{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:8px 8px 0 0;padding:.7rem 1rem;border-bottom:2px solid #edf2f7}
+.sec-title{font-weight:600;font-size:.9rem}
+.badges{display:flex;gap:.4rem}
+.badge{padding:.12rem .45rem;border-radius:10px;font-size:.72rem;font-weight:700}
+.bp{background:#c6f6d5;color:#22543d}.bf{background:#fed7d7;color:#822727}.be{background:#feebc8;color:#7b341e}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:0 0 8px 8px;font-size:.8rem}
+th{background:#edf2f7;padding:.55rem .7rem;text-align:left;font-weight:600;color:#4a5568;text-transform:uppercase;font-size:.7rem;letter-spacing:.04em}
+td{padding:.5rem .7rem;border-bottom:1px solid #f7fafc;vertical-align:top}
+tr:hover td{background:#fafafa}
+.sp{color:#38a169;font-weight:700}.sf{color:#e53e3e;font-weight:700}.se{color:#dd6b20;font-weight:700}
+.pill{padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.pv{background:#ebf8ff;color:#2b6cb0}.pi{background:#fff5f5;color:#c53030}
+.mono{font-family:monospace;font-size:.72rem;color:#e53e3e;white-space:pre-wrap;word-break:break-all;max-width:600px}
+.xml-toggle{cursor:pointer;color:#3182ce;font-size:.72rem;text-decoration:underline;border:none;background:none;padding:0}
+.xml-block{font-family:monospace;font-size:.68rem;background:#1a202c;color:#a0e2ff;padding:.6rem;border-radius:4px;
+  white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;display:none;margin-top:.3rem}
+.uuid{font-size:.68rem;color:#718096;font-family:monospace}
+footer{text-align:center;color:#a0aec0;font-size:.75rem;margin-top:2rem}
+</style>
+</head>
+<body>
+<h1>FX Payment Processor — CSV Component Test Report</h1>
+<p class="subtitle">Generated: 2026-04-29 20:39:33 &nbsp;|&nbsp; Duration: 1.91s &nbsp;|&nbsp; Total tests: 1</p>
+<div class="grid">
+<div class="card"><div class="num pass">1</div><div class="label">Passed</div></div>
+<div class="card"><div class="num fail">0</div><div class="label">Failed</div></div>
+<div class="card"><div class="num error">0</div><div class="label">Errors</div></div>
+<div class="card"><div class="num info">1</div><div class="label">Total</div></div>
+<div class="card"><div class="num pass">100.0%</div><div class="label">Pass Rate</div></div>
+<div class="card"><div class="num info">1.91s</div><div class="label">Duration</div></div>
+</div>
+<div class="progress"><div class="fill fill-pass" style="width:100%"></div></div>
+<section>
+<div class="sec-head">
+<span class="sec-title">HappyPath</span>
+<span class="badges"><span class="badge bp">✓ 1</span></span></div>
+<table><thead><tr><th>#</th><th>Test ID</th><th>Description</th><th>Expected</th><th>Status</th><th>DB Status</th><th>UUID</th><th>Failures</th><th>Duration</th><th>XML</th></tr></thead><tbody>
+<tr><td>1</td><td>HP-001</td><td>USD/GBP FX settlement - GROS method</td><td><span class="pill pv">VALID</span></td><td class="sp">✓ PASS</td><td>PROCESSED</td><td class="uuid">d9677b8a…</td><td>—</td><td>1.91s</td><td><button class="xml-toggle" onclick="toggle('xml-1')">view</button><div class="xml-block" id="xml-1">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;&lt;DomainPayment xmlns=&quot;urn:com:fx:payment:domain:v1&quot;&gt;&lt;PaymentId&gt;d9677b8a-012a-48e4-9abf-68c89b688e7a&lt;/PaymentId&gt;&lt;OriginalMessageId&gt;HP-MSG-001&lt;/OriginalMessageId&gt;&lt;TransactionId&gt;HP-TXN-001&lt;/TransactionId&gt;&lt;EndToEndId&gt;HP-E2E-001&lt;/EndToEndId&gt;&lt;UETR&gt;a1b2c3d4-e5f6-4789-ab01-cd2345ef6789&lt;/UETR&gt;&lt;SettlementAmount&gt;1250000.00&lt;/SettlementAmount&gt;&lt;SettlementCurrency&gt;USD&lt;/SettlementCurrency&gt;&lt;SettlementDate&gt;2024-04-17&lt;/SettlementDate&gt;&lt;SettlementMethod&gt;GROS&lt;/SettlementMethod&gt;&lt;ExchangeRate&gt;1.2650000000&lt;/ExchangeRate&gt;&lt;DebtorBIC&gt;BARCGB22&lt;/DebtorBIC&gt;&lt;DebtorName&gt;Barclays Bank PLC&lt;/DebtorName&gt;&lt;DebtorIBAN&gt;GB29BARC20000055779911&lt;/DebtorIBAN&gt;&lt;DebtorAgentBIC&gt;BOFAUS3N&lt;/DebtorAgentBIC&gt;&lt;CreditorBIC&gt;JPMSGB2L&lt;/CreditorBIC&gt;&lt;CreditorName&gt;JP Morgan London&lt;/CreditorName&gt;&lt;CreditorIBAN&gt;GB94JPMC50100012345678&lt;/CreditorIBAN&gt;&lt;CreditorAgentBIC&gt;CHASUS33&lt;/CreditorAgentBIC&gt;&lt;ChargeBearer&gt;SHAR&lt;/ChargeBearer&gt;&lt;PurposeCode&gt;CORT&lt;/PurposeCode&gt;&lt;RemittanceInfo&gt;FX Trade Settlement REF-001…</div></td></tr>
+</tbody></table></section>
+<footer>FX CSV Component Tests — fx-payment-processor v1.0.0</footer>
+<script>
+function toggle(id){var el=document.getElementById(id);el.style.display=el.style.display==='block'?'none':'block';}
+</script>
+</body></html>
