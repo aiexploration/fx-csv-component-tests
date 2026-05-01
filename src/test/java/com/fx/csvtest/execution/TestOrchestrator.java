@@ -2,26 +2,29 @@ package com.fx.csvtest.execution;
 
 import com.fx.csvtest.assertion.DomainPaymentAsserter;
 import com.fx.csvtest.db.TestExecutionRecord;
+import com.fx.payment.config.RabbitConfig;
 import com.fx.csvtest.db.TestExecutionRepository;
 import com.fx.csvtest.model.TestCase;
 import com.fx.csvtest.model.TestResult;
-import com.fx.payment.config.JmsConfig;
 import com.fx.payment.entity.PaymentMessage;
 import com.fx.payment.entity.PaymentStatus;
 import com.fx.payment.model.domain.DomainPayment;
 import com.fx.payment.repository.PaymentMessageRepository;
-import jakarta.jms.TextMessage;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TestOrchestrator {
 
-    private final JmsTemplate jmsTemplate;
+    private final RabbitTemplate rabbitTemplate;
     private final PaymentMessageRepository autPaymentRepo;     // AUT's DB
     private final TestExecutionRepository testExecRepo;         // test framework's DB
     private final DomainPaymentAsserter asserter;
@@ -97,8 +100,14 @@ public class TestOrchestrator {
 
         try {
             // ── 1. Send to inbound queue ──────────────────────────────────
-            jmsTemplate.convertAndSend(JmsConfig.INBOUND_QUEUE, sentXml);
-            log.debug("[{}] Sent to {}", tc.getTestId(), JmsConfig.INBOUND_QUEUE);
+            rabbitTemplate.send(
+                RabbitConfig.EXCHANGE_NAME,
+                RabbitConfig.ROUTING_KEY_INBOUND,
+                MessageBuilder.withBody(sentXml.getBytes(StandardCharsets.UTF_8))
+                    .setContentType(MessageProperties.CONTENT_TYPE_XML)
+                    .build()
+            );
+            log.debug("[{}] Sent to {}", tc.getTestId(), RabbitConfig.INBOUND_QUEUE);
 
             // ── 2. Route to VALID or INVALID assertion path ───────────────
             if (tc.isValid()) {
@@ -153,10 +162,10 @@ public class TestOrchestrator {
         exec.setAutDbStatus(autRecord.getStatus().name());
 
         // Read domain payment from valid queue – match by TransactionId
-        DomainPayment domain = drainForTxId(JmsConfig.VALID_QUEUE, tc.getTxId());
+        DomainPayment domain = drainForTxId(RabbitConfig.VALID_QUEUE, tc.getTxId());
         if (domain == null) {
             result.setStatus(TestResult.Status.FAIL);
-            result.addFailure("No domain payment found on " + JmsConfig.VALID_QUEUE
+            result.addFailure("No domain payment found on " + RabbitConfig.VALID_QUEUE
                     + " with TransactionId=" + tc.getTxId());
             exec.setState(TestExecutionRecord.State.PROCESSED);
             exec.setResultStatus("FAIL");
@@ -203,16 +212,14 @@ public class TestOrchestrator {
         exec.setAutValidationErrors(autRecord.getValidationErrors());
 
         // Verify the message also appeared on the invalid queue
-        jakarta.jms.Message invalidMsg = jmsTemplate.receive(JmsConfig.INVALID_QUEUE);
+        Message invalidMsg = rabbitTemplate.receive(RabbitConfig.INVALID_QUEUE);
         if (invalidMsg == null) {
-            result.addFailure("No message received on " + JmsConfig.INVALID_QUEUE
+            result.addFailure("No message received on " + RabbitConfig.INVALID_QUEUE
                     + " within receive-timeout");
         } else {
-            try {
-                String txt = ((TextMessage) invalidMsg).getText();
-                result.setReceivedInvalidXml(txt);
-                exec.setReceivedInvalidXml(txt.length() > 2000 ? txt.substring(0, 2000) + "…" : txt);
-            } catch (Exception ignored) {}
+            String txt = new String(invalidMsg.getBody());
+            result.setReceivedInvalidXml(txt);
+            exec.setReceivedInvalidXml(txt.length() > 2000 ? txt.substring(0, 2000) + "…" : txt);
         }
 
         // Check expected error substring if specified in CSV
@@ -238,10 +245,10 @@ public class TestOrchestrator {
     private DomainPayment drainForTxId(String queue, String txId) {
         long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
         while (System.currentTimeMillis() < deadline) {
-            jakarta.jms.Message raw = jmsTemplate.receive(queue);
+            Message raw = rabbitTemplate.receive(queue);
             if (raw == null) break;
             try {
-                String xml = ((TextMessage) raw).getText();
+                String xml = new String(raw.getBody());
                 DomainPayment dp = parseDomain(xml);
                 if (txId.equals(dp.getTransactionId())) return dp;
                 log.debug("Discarded unrelated domain payment txId={} (looking for {})",

@@ -1,5 +1,6 @@
 package com.fx.csvtest.runner;
 
+import com.fx.csvtest.config.CsvTestSuiteConfig;
 import com.fx.csvtest.csv.CsvTestCaseLoader;
 import com.fx.csvtest.execution.TestOrchestrator;
 import com.fx.csvtest.model.TestCase;
@@ -48,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   mvn test
  * </pre>
  */
-@SpringBootTest(classes = FxPaymentProcessorApplication.class)
+@SpringBootTest(classes = {FxPaymentProcessorApplication.class, CsvTestSuiteConfig.class})
 @ActiveProfiles("default")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("FX Payment Processor – CSV Component Test Suite")

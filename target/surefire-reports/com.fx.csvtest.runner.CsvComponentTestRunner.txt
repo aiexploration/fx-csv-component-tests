@@ -1,0 +1,225 @@
+-------------------------------------------------------------------------------
+Test set: com.fx.csvtest.runner.CsvComponentTestRunner
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 12616 s <<< FAILURE! -- in com.fx.csvtest.runner.CsvComponentTestRunner
+com.fx.csvtest.runner.CsvComponentTestRunner.assertSuitePassed -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+99 test case(s) FAILED:
+  ✗ [HP-001] USD/GBP FX settlement - GROS method
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-002] EUR/JPY treasury swap - CLRG method
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-003] CHF/USD same-currency - INDA no FX rate
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-003] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-004] All optional fields present - full message
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-005] Minimum required fields only
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-006] GBP domestic transfer - zero exchange rate
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-006] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-007] AUD/USD via COVE cover method
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-007] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [HP-008] SGD small-value interbank payment
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[HP-008] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-001] Amount: zero (minInclusive=0) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-002] Amount: 0.00001 (minimum fractional 5dp) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-003] Amount: 1 (integer) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-003] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-004] Amount: 1000000.00 (standard FX amount) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-005] Amount: 9999999999999.99999 (near max 18 total digits) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-006] Amount: 1.12345 (exactly 5 decimal places) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-006] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-007] Amount: -0.01 (negative violates minInclusive=0) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-007] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-008] Amount: -1000000 (large negative) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-008] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-010] Amount: MILLION (non-numeric text) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-010] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [AMT-012] Amount: 1.1234567 (7 decimal places) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[AMT-012] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-001] Currency: USD (3-letter standard) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-002] Currency: EUR (3-letter standard) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-003] Currency: JPY (3-letter no decimal) - VALID
+      → PaymentStatus: expected='JPY' actual='PROCESSED'
+  ✗ [CCY-004] Currency: CHF (3-letter) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-005] Currency: GBP - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-006] Currency: AUD - VALID
+      → PaymentStatus: expected='AUD' actual='PROCESSED'
+  ✗ [CCY-007] Currency: NOK (Scandinavian) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-007] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-008] Currency: XAU (gold) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-008] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-009] Currency: usd (all lowercase) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-009] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-010] Currency: Usd (mixed case) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-010] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-011] Currency: USDX (4 letters too long) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-011] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-012] Currency: US (2 letters too short) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-012] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-014] Currency: 123 (digits only) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-014] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CCY-015] Currency: U$D (special character) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CCY-015] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-001] Debtor BIC: BARCGB22 (8-char standard) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-002] Debtor BIC: BARCGB22XXX (11-char with branch) - VALID
+      → SettlementMethod: expected='BARCGB22XXX' actual='GROS'
+      → ExchangeRate: expected value 'JPMSGB2L' is not a valid decimal
+  ✗ [BIC-003] Debtor BIC: UBSWCHZH80A (11-char numeric branch) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-003] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-004] Creditor BIC: DEUTDEFFXXX (11-char) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-005] BIC with digits in bank code AAAA1122 - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-007] BIC: BarcGB22 (mixed case) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-007] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-008] BIC: BARCGB2 (7 chars too short) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-008] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-009] BIC: BARCGB221 (9 chars - not 8 or 11) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-009] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-011] BIC: BARCGB22XXXX (12 chars too long) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-011] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-012] BIC: BARC1B22 (digit in country code position) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-012] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-013] Debtor element missing entirely - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-013] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [BIC-014] Creditor element missing entirely - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[BIC-014] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-001] MsgId: length 1 (minimum Max35Text) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-002] MsgId: length 35 (maximum Max35Text) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-003] MsgId: length 36 (one over Max35Text) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-003] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-005] TxId: length 1 (minimum) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-006] TxId: length 35 (maximum) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-006] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-007] TxId missing (required field) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-007] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-008] EndToEndId: length 1 (minimum) - VALID
+      → CreditorAgentBIC: expected='E' actual='CHASUS33'
+  ✗ [ID-009] EndToEndId: length 35 (maximum) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-009] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-010] EndToEndId missing (required field) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-010] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-011] InstrId: length 35 (max when present) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-011] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-013] UETR: valid v4 UUID lowercase - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-013] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-014] UETR: absent (optional field) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-014] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-015] UETR: not v4 (3rd group starts with 1 not 4) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-015] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [ID-017] UETR: uppercase hex (pattern requires lowercase) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[ID-017] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-001] SttlmMtd: CLRG - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-002] SttlmMtd: COVE - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-003] SttlmMtd: GROS - VALID
+      → SettlementDate: expected='GROS' actual='2024-04-17'
+      → CreditorName: expected='SHAR' actual='null'
+  ✗ [SM-004] SttlmMtd: INDA - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-005] SttlmMtd: WIRE (invalid enum) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-005] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-006] SttlmMtd: SEPA (not in enum) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-006] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [SM-008] SttlmMtd missing - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[SM-008] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-001] ChrgBr: CRED - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-002] ChrgBr: DEBT - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-003] ChrgBr: SHAR - VALID
+      ERROR: Query did not return a unique result: 2 results were returned
+  ✗ [CB-004] ChrgBr: SLEV - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-005] ChrgBr: NONE (not in enum) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-005] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-006] ChrgBr: OUR (SWIFT legacy) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-006] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [CB-008] ChrgBr missing - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[CB-008] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DT-001] Date: 2024-04-17 (standard ISO) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DT-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DT-002] Date: 2099-12-31 (far future) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DT-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DT-003] Date: 2020-01-01 (past date allowed by XSD) - VALID
+      → SettlementAmount: expected value '2020-01-01' is not a valid decimal
+  ✗ [DT-004] Date: 2024-02-29 (leap year) - VALID
+      → SettlementAmount: expected value '2024-02-29' is not a valid decimal
+      → UUID mismatch: domain.PaymentId='78d5c45a-bdd2-4c5f-84af-400b064f8a28' != AUT DB id='929326a2-d2b2-4c74-b03c-db427f1a68f4'
+  ✗ [DT-005] Date: 17/04/2024 (DD/MM/YYYY wrong format) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DT-005] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DT-006] Date: 2024/04/17 (slashes wrong format) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DT-006] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DT-008] Settlement date missing - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DT-008] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [IB-001] IBAN: GB29BARC20000055779911 (UK 22-char) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[IB-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [IB-002] IBAN: DE89370400440532013000 (Germany 22-char) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[IB-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [IB-003] IBAN: FR7614508059451234567890183 (France 27-char) - VALID
+      → SettlementMethod: expected='BARCGB22' actual='GROS'
+      → ExchangeRate: expected value 'BNPAFRPP' is not a valid decimal
+      → DebtorBIC: expected='GB29BARC20000055779911' actual='BARCGB22'
+      → CreditorBIC: expected='FR7614508059451234567890183' actual='BNPAFRPP'
+  ✗ [IB-004] IBAN: absent (optional - no accounts) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[IB-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [IB-005] IBAN: gb29BARC (lowercase country code) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[IB-005] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [IB-006] IBAN: 1234567890 (no country code) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[IB-006] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [XR-001] ExchRate: 1.2650000000 (10 decimal places) - VALID
+      → SettlementDate: expected='1.2650000000' actual='2024-04-17'
+      → UUID mismatch: domain.PaymentId='14a06889-2cd1-40ff-b9b4-ae0716cf4431' != AUT DB id='81452f12-e834-4c76-9190-504a9155b867'
+  ✗ [XR-002] ExchRate: 161.8900000000 (EUR/JPY cross rate) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[XR-002] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [XR-003] ExchRate: absent (same-currency no FX) - VALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[XR-003] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [XR-004] ExchRate: 0.6520000000 (AUD/USD sub-1 rate) - VALID
+      → SettlementDate: expected='0.6520000000' actual='2024-04-17'
+  ✗ [XR-005] ExchRate: negative -1.2 (invalid) - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[XR-005] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [XR-006] ExchRate: text NOT_A_RATE - INVALID
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[XR-006] INVALID record in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DM-001] Full field mapping: all domain fields verified
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DM-001] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DM-002] Purpose code TREA mapped to domain
+      → PaymentStatus: expected='85000000' actual='PROCESSED'
+      → SettlementAmount: expected value 'JPY' is not a valid decimal
+      → PurposeCode: expected='DEBT' actual='TREA'
+      → RemittanceInfo: expected='TREA' actual='Treasury FX Leg 2'
+      → UETR: expected='Treasury FX Leg 2' actual='null'
+  ✗ [DM-003] Purpose code BEXP mapped to domain
+      ERROR: Query did not return a unique result: 2 results were returned
+  ✗ [DM-004] Purpose code INTC (intra-company) mapped
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DM-004] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DM-005] Remittance info max 140 chars mapped
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DM-005] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DM-006] INDA settlement method propagated to domain
+      ERROR: Query did not return a unique result: 2 results were returned
+  ✗ [DM-007] COVE settlement method propagated to domain
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DM-007] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+  ✗ [DM-008] No optional fields - minimal domain object
+      → Timeout after 15s waiting for AUT to process message. Condition with alias '[DM-008] PROCESSED in AUT DB' didn't complete within 15 seconds because condition with Lambda expression in com.fx.csvtest.execution.TestOrchestrator was not fulfilled.
+
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at com.fx.csvtest.runner.CsvComponentTestRunner.assertSuitePassed(CsvComponentTestRunner.java:144)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+

@@ -1,0 +1,14 @@
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/assertion/DomainPaymentAsserter.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/assertion/TimestampNormalizer.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/config/CsvTestSuiteConfig.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/csv/CsvTestCaseLoader.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/db/TestExecutionRecord.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/db/TestExecutionRepository.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/execution/TestOrchestrator.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/model/ExpectedOutcome.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/model/TestCase.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/model/TestResult.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/report/CsvReportGenerator.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/report/HtmlReportGenerator.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/runner/CsvComponentTestRunner.java
+/Users/sm/2026/claude_projects/fx-csv-component-tests/src/test/java/com/fx/csvtest/xml/Pacs009XmlFactory.java

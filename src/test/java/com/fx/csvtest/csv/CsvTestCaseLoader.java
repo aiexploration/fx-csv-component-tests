@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
@@ -39,7 +40,7 @@ public class CsvTestCaseLoader {
      *
      * @return ordered list of test cases, preserving file and row order
      */
-    public List<TestCase> loadAll() throws IOException {
+    public List<TestCase> loadAll() throws IOException, CsvValidationException {
         Path dir = Paths.get(testDataDir);
         if (!Files.exists(dir)) {
             throw new IllegalStateException("Test data directory not found: " + dir.toAbsolutePath());
@@ -64,7 +65,7 @@ public class CsvTestCaseLoader {
 
     // ── Private ───────────────────────────────────────────────────────────
 
-    private List<TestCase> loadFile(Path file) throws IOException {
+    private List<TestCase> loadFile(Path file) throws IOException, CsvValidationException {
         List<TestCase> cases = new ArrayList<>();
         RFC4180Parser parser = new RFC4180ParserBuilder().build();
 
