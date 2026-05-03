@@ -15,14 +15,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPORT_DIR="${SCRIPT_DIR}/target/component-test-report"
-HTML_REPORT="${REPORT_DIR}/component-test-report.html"
+REPORT_DIR="${SCRIPT_DIR}/component-test-report"
+HTML_REPORT="${REPORT_DIR}/component-test-reports.html"
 CSV_REPORT="${REPORT_DIR}/component-test-results.csv"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'
 RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
 
 OPEN_REPORT=false
+FILE_ARG=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --open-report)
@@ -30,16 +31,39 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --help|-h)
-      echo "Usage: ./run-tests.sh [--open-report]"
+      echo "Usage: ./run-tests.sh [csv-filename] [--open-report]"
+      echo ""
+      echo "Arguments:"
+      echo "  csv-filename             Run a single CSV file from src/test/resources/test-data/"
+      echo "                           You can pass the exact name or a short identifier."
+      echo "                           Examples: 01-happy-path-tests.csv, 02-settlement-method-tests"
+      echo ""
+      echo "Options:"
+      echo "  --open-report            Open HTML report in browser after run"
+      echo ""
+      echo "Examples:"
+      echo "  ./run-tests.sh                                          # run all"
+      echo "  ./run-tests.sh 01-happy-path-tests.csv                 # run one file"
+      echo "  ./run-tests.sh 02-settlement-method-tests --open-report"
       echo ""
       echo "Defaults:"
-      echo "  Report directory:        ${REPORT_DIR}"
+      echo "  Report directory: ${REPORT_DIR}"
       exit 0
       ;;
-    *)
-      echo -e "${RED}ERROR: unknown argument: $1${NC}"
+    -*)
+      echo -e "${RED}ERROR: unknown option: $1${NC}"
       echo "Run ./run-tests.sh --help for usage."
       exit 1
+      ;;
+    *)
+      if [ -z "$FILE_ARG" ]; then
+        FILE_ARG="$1"
+      else
+        echo -e "${RED}ERROR: unexpected argument: $1${NC}"
+        echo "Run ./run-tests.sh --help for usage."
+        exit 1
+      fi
+      shift
       ;;
   esac
 done
@@ -66,16 +90,66 @@ check_prereqs() {
 
 run_tests() {
   echo -e "${BOLD}Running CSV component test suite...${NC}"
-  echo -e "${CYAN}  Mode: external SwiftPay process + exposed embedded H2/Artemis${NC}"
-  echo -e "${CYAN}  Expected: ./start-component.sh is running in another terminal${NC}"
+  if [ -n "${FILE_ARG}" ]; then
+    echo -e "${CYAN}  File: ${FILE_ARG}${NC}"
+  else
+    echo -e "${CYAN}  Mode: all CSV files in test-data/${NC}"
+  fi
+  echo -e "${CYAN}  Expected: fx-payment-processor is running in another terminal${NC}"
   echo ""
   cd "$SCRIPT_DIR"
+
+  TEST_DATA_DIR="${SCRIPT_DIR}/src/test/resources/test-data"
+  if [ -n "${FILE_ARG}" ]; then
+    # Resolve the requested CSV file from the test-data directory
+    REQUESTED="$(basename "$FILE_ARG")"
+    CANDIDATE=""
+
+    if [ -f "${TEST_DATA_DIR}/${REQUESTED}" ]; then
+      CANDIDATE="${TEST_DATA_DIR}/${REQUESTED}"
+    elif [ -f "${TEST_DATA_DIR}/${REQUESTED}.csv" ]; then
+      CANDIDATE="${TEST_DATA_DIR}/${REQUESTED}.csv"
+    else
+      found=0
+      for f in "${TEST_DATA_DIR}"/*"${REQUESTED}"*.csv; do
+        if [ -f "$f" ]; then
+          if [ "$found" -eq 0 ]; then
+            CANDIDATE="$f"
+            found=1
+          else
+            found=2
+            break
+          fi
+        fi
+      done
+      if [ "$found" -eq 2 ]; then
+        echo -e "${RED}ERROR: multiple matching files found for '${REQUESTED}':${NC}"
+        for f in "${TEST_DATA_DIR}"/*"${REQUESTED}"*.csv; do
+          [ -f "$f" ] && echo "  $(basename "$f")"
+        done
+        exit 1
+      fi
+    fi
+
+    if [ -z "${CANDIDATE}" ]; then
+      echo -e "${RED}ERROR: No matching CSV file found for '${REQUESTED}' in ${TEST_DATA_DIR}${NC}"
+      exit 1
+    fi
+
+    TEMP_DIR="${SCRIPT_DIR}/temp-test-data-${REQUESTED%.*}"
+    rm -rf "$TEMP_DIR"
+    mkdir -p "$TEMP_DIR"
+    cp "$CANDIDATE" "$TEMP_DIR/"
+    TEST_DATA_DIR="$TEMP_DIR"
+    FILE_ARG="$(basename "$CANDIDATE")"
+  fi
+
   # Run Maven, capture exit code without 'set -e' killing us
   set +e
   mvn clean test \
     -Dspring.profiles.active=default \
     -Dreport.dir="${REPORT_DIR}" \
-    -Dtest.data.dir="${SCRIPT_DIR}/src/test/resources/test-data" \
+    -Dtest.data.dir="${TEST_DATA_DIR}" \
     2>&1
   MAVEN_EXIT=$?
   set -e

@@ -74,7 +74,7 @@ class CsvComponentTestRunner {
     @Autowired private Pacs009XmlFactory xmlFactory;
     @Autowired private TestOrchestrator orchestrator;
 
-    @Value("${report.dir:target/component-test-report}")
+    @Value("${report.dir:component-test-report}")
     private String reportDir;
 
     @Value("${fx.component.test.test-data-dir:src/test/resources/test-data}")

@@ -35,12 +35,21 @@ public class CsvTestCaseLoader {
     @Value("${fx.component.test.test-data-dir:src/test/resources/test-data}")
     private String testDataDir;
 
+    /** When set, only this file is loaded instead of all *.csv in the directory. */
+    @Value("${fx.component.test.test-data-file:}")
+    private String testDataFile;
+
     /**
-     * Loads all {@code *.csv} files from the configured directory.
+     * Loads test cases. If {@code fx.component.test.test-data-file} is set, loads
+     * only that file; otherwise loads all {@code *.csv} files from the directory.
      *
      * @return ordered list of test cases, preserving file and row order
      */
     public List<TestCase> loadAll() throws IOException {
+        if (testDataFile != null && !testDataFile.isBlank()) {
+            return loadSingleFile(testDataFile);
+        }
+
         Path dir = Paths.get(testDataDir);
         if (!Files.exists(dir)) {
             throw new IllegalStateException("Test data directory not found: " + dir.toAbsolutePath());
@@ -61,6 +70,21 @@ public class CsvTestCaseLoader {
         }
         log.info("Total test cases loaded: {}", all.size());
         return all;
+    }
+
+    private List<TestCase> loadSingleFile(String fileName) throws IOException {
+        // Accept absolute path or filename relative to testDataDir
+        Path file = Paths.get(fileName);
+        if (!file.isAbsolute() || !Files.exists(file)) {
+            file = Paths.get(testDataDir).resolve(fileName);
+        }
+        if (!Files.exists(file)) {
+            throw new IllegalStateException("Test data file not found: " + file.toAbsolutePath());
+        }
+        log.info("Loading test cases from: {}", file.getFileName());
+        List<TestCase> loaded = loadFile(file);
+        log.info("Total test cases loaded: {}", loaded.size());
+        return loaded;
     }
 
     // ── Private ───────────────────────────────────────────────────────────
@@ -86,7 +110,8 @@ public class CsvTestCaseLoader {
                     continue;
                 }
 
-                Map<String, String> m = toMap(header, trim(row));
+                String[] normalizedRow = normalizeRow(row, header.length, rowNum, file);
+                Map<String, String> m = toMap(header, trim(normalizedRow));
                 try {
                     cases.add(map(m));
                 } catch (Exception e) {
@@ -187,6 +212,27 @@ public class CsvTestCaseLoader {
             map.put(headers[i], i < values.length ? values[i] : "");
         }
         return map;
+    }
+
+    private String[] normalizeRow(String[] row, int headerLength, int rowNum, Path file) {
+        if (row.length > headerLength) {
+            boolean extraValuesBlank = true;
+            for (int i = headerLength; i < row.length; i++) {
+                if (!row[i].trim().isEmpty()) {
+                    extraValuesBlank = false;
+                    break;
+                }
+            }
+            if (extraValuesBlank) {
+                log.warn("Row {} in {} has {} extra empty columns; trimming to header length",
+                        rowNum, file.getFileName(), row.length - headerLength);
+                return Arrays.copyOf(row, headerLength);
+            }
+            throw new IllegalArgumentException(String.format(
+                    "Malformed row %d in %s: expected %d columns but found %d",
+                    rowNum, file.getFileName(), headerLength, row.length));
+        }
+        return row;
     }
 
     private String[] trim(String[] arr) {
